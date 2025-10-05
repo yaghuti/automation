@@ -1,0 +1,36 @@
+name: Automation dispatcher (GitHub App)
+
+on:
+  repository_dispatch:
+    types: [automation-run]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for scripts)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install requests pyjwt[crypto]
+
+      - name: Run automation worker (App-based)
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+          # OPTIONAL: if you prefer to set a fixed installation id (not required),
+          # set INSTALLATION_ID in repo secrets and uncomment the next line:
+          # INSTALLATION_ID: ${{ secrets.INSTALLATION_ID }}
+          GITHUB_API_URL: "https://api.github.com"
+        run: |
+          python scripts/automation_worker_app.py
